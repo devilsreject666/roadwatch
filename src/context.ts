@@ -5,6 +5,7 @@ import { NominatimGeocoder, OsrmRouter } from './providers';
 import type { GeocodingProvider, RoutingProvider } from './providers';
 import { LocalStorageRepository } from './store';
 import type { Repository } from './store';
+import { autoDetect } from './autoDetect';
 import { locationService } from './location';
 import type { Theme } from './mapView';
 
@@ -29,6 +30,10 @@ export function createContext(goTab: (t: TabName) => void): TabContext {
   let theme: Theme = 'dark';
   const themeListeners = new Set<(t: Theme) => void>();
   const layerRefreshers = new Set<() => void>();
+
+  autoDetect.init(repo, () => {
+    for (const fn of layerRefreshers) fn();
+  });
 
   return {
     repo,
