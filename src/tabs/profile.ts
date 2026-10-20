@@ -4,6 +4,7 @@
  */
 import { APP_VERSION } from '../config';
 import { locationService } from '../location';
+import { autoDetect } from '../autoDetect';
 import type { TabContext } from '../context';
 import { el, toast, confirmDialog } from '../ui';
 
@@ -44,11 +45,31 @@ export function createProfileTab(root: HTMLElement, ctx: TabContext): () => void
     trackRow.append(trackBox, el('span', '', 'Location tracking'));
     trackBox.addEventListener('change', () => {
       const on = trackBox.checked;
-      ctx.repo.savePrivacy({ locationTracking: on });
+      ctx.repo.savePrivacy({ ...ctx.repo.getPrivacy(), locationTracking: on });
       locationService.setTrackingEnabled(on);
       toast(on ? 'Location tracking on.' : 'Location tracking off.');
     });
     pCard.appendChild(trackRow);
+
+    const detectRow = el('label', 'toggle-row');
+    const detectBox = el('input', '') as HTMLInputElement;
+    detectBox.type = 'checkbox';
+    detectBox.checked = ctx.repo.getPrivacy().autoDetect !== false;
+    detectRow.append(detectBox, el('span', '', 'Auto-detect potholes'));
+    detectBox.addEventListener('change', () => {
+      const on = detectBox.checked;
+      ctx.repo.savePrivacy({ ...ctx.repo.getPrivacy(), autoDetect: on });
+      autoDetect.setEnabled(on);
+      toast(on ? 'Auto-detect on.' : 'Auto-detect off.');
+    });
+    pCard.appendChild(detectRow);
+    pCard.appendChild(
+      el(
+        'p',
+        'muted small',
+        'Uses the motion sensor while you drive to catch pothole impacts and offer a one-tap report.',
+      ),
+    );
     pCard.appendChild(
       el(
         'p',
