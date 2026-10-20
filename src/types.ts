@@ -15,7 +15,7 @@ export interface PotholeReport {
   createdAt: number; // epoch ms
   isSample: boolean;
   /** Set for the one-shot Denver 311 public-record seed (immutable, not user data). */
-  source?: 'denver311';
+  source?: 'manual' | 'auto' | 'denver311';
 }
 
 export interface TripPoint extends LatLng {
@@ -40,6 +40,11 @@ export interface VehicleProfile {
 
 export interface PrivacySettings {
   locationTracking: boolean;
+  /**
+   * Automatic pothole detection from the motion sensor while driving.
+   * Optional for back-compat; treated as ON when absent.
+   */
+  autoDetect?: boolean;
 }
 
 export interface GeocodeResult {
