@@ -37,8 +37,10 @@ jobs:
       # exact platform and build-tools the app targets are installed.
       - name: Install Android SDK packages
         run: |
-          yes | sdkmanager --licenses > /dev/null
-          sdkmanager "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+          SDKMANAGER=$(ls -d "$ANDROID_HOME"/cmdline-tools/*/bin/sdkmanager 2>/dev/null | head -1)
+          if [ -z "$SDKMANAGER" ]; then echo "sdkmanager not found"; ls "$ANDROID_HOME"; exit 1; fi
+          yes | "$SDKMANAGER" --licenses > /dev/null
+          "$SDKMANAGER" "platform-tools" "platforms;android-34" "build-tools;34.0.0"
 
       - uses: gradle/actions/setup-gradle@v3
         with:
