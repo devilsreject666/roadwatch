@@ -4,6 +4,7 @@
  */
 import { MapView } from '../mapView';
 import { locationService } from '../location';
+import { autoDetect } from '../autoDetect';
 import type { Fix } from '../location';
 import { formatDateTime, formatDistance, formatDuration, haversineMeters, uid } from '../geo';
 import type { Trip, TripPoint } from '../types';
@@ -24,6 +25,7 @@ export function createTripsTab(root: HTMLElement, ctx: TabContext): () => void {
     lastPoint: TripPoint | null;
     tickTimer: number | null;
   } | null = null;
+  let releaseAutoDetect: (() => void) | null = null;
 
   function render(): void {
     root.innerHTML = '';
@@ -129,6 +131,7 @@ export function createTripsTab(root: HTMLElement, ctx: TabContext): () => void {
       rec.lastPoint = p;
     });
     recording = rec;
+    releaseAutoDetect = autoDetect.acquire();
     toast('Trip recording started.');
     render();
   }
@@ -139,6 +142,8 @@ export function createTripsTab(root: HTMLElement, ctx: TabContext): () => void {
     rec.unsub();
     if (rec.tickTimer !== null) window.clearInterval(rec.tickTimer);
     recording = null;
+    releaseAutoDetect?.();
+    releaseAutoDetect = null;
     const endedAt = Date.now();
     const reports = ctx.repo.listPotholes();
     const passed = new Set<string>();
