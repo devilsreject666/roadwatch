@@ -5,6 +5,7 @@
 import { MapView } from '../mapView';
 import type { Fix } from '../location';
 import { locationService } from '../location';
+import { autoDetect } from '../autoDetect';
 import { formatDistance, formatDuration, formatSpeed, haversineMeters } from '../geo';
 import type { GeocodeResult, RouteResult } from '../types';
 import type { TabContext } from '../context';
@@ -76,6 +77,7 @@ export function createNavigateTab(root: HTMLElement, ctx: TabContext): () => voi
   let navigating = false;
   let stepIndex = 0;
   let searchTimer: number | null = null;
+  let releaseAutoDetect: (() => void) | null = null;
 
   const unsub = locationService.subscribe((fix) => {
     currentFix = fix;
@@ -185,6 +187,7 @@ export function createNavigateTab(root: HTMLElement, ctx: TabContext): () => voi
     if (!route || !dest) return;
     navigating = true;
     stepIndex = 0;
+    releaseAutoDetect = autoDetect.acquire();
     routeCard.classList.add('hidden');
     searchWrap.classList.add('hidden');
     fab.classList.add('hidden');
@@ -243,6 +246,8 @@ export function createNavigateTab(root: HTMLElement, ctx: TabContext): () => voi
 
   function endNavigation(): void {
     navigating = false;
+    releaseAutoDetect?.();
+    releaseAutoDetect = null;
     route = null;
     dest = null;
     map.clearRoute();
