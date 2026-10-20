@@ -1,1 +1,12 @@
-aW1wb3J0IHsgZGVmaW5lQ29uZmlnIH0gZnJvbSAndml0ZSc7CgpleHBvcnQgZGVmYXVsdCBkZWZpbmVDb25maWcoewogIHNlcnZlcjogewogICAgaG9zdDogdHJ1ZSwKICAgIHBvcnQ6IDUxNzMsCiAgfSwKICBidWlsZDogewogICAgb3V0RGlyOiAnZGlzdCcsCiAgICBzb3VyY2VtYXA6IGZhbHNlLAogIH0sCn0pOwo=
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  server: {
+    host: true,
+    port: 5173,
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+  },
+});
