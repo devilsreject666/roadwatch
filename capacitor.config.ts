@@ -1,1 +1,14 @@
-aW1wb3J0IHR5cGUgeyBDYXBhY2l0b3JDb25maWcgfSBmcm9tICdAY2FwYWNpdG9yL2NsaSc7CmltcG9ydCB7IEFQUF9JRCwgQVBQX05BTUUgfSBmcm9tICcuL3NyYy9jb25maWcnOwoKY29uc3QgY29uZmlnOiBDYXBhY2l0b3JDb25maWcgPSB7CiAgYXBwSWQ6IEFQUF9JRCwKICBhcHBOYW1lOiBBUFBfTkFNRSwKICB3ZWJEaXI6ICdkaXN0JywKICBiYWNrZ3JvdW5kQ29sb3I6ICcjMGIxMjIwJywKICBhbmRyb2lkOiB7CiAgICBhbGxvd01peGVkQ29udGVudDogZmFsc2UsCiAgfSwKfTsKCmV4cG9ydCBkZWZhdWx0IGNvbmZpZzsK
+import type { CapacitorConfig } from '@capacitor/cli';
+import { APP_ID, APP_NAME } from './src/config';
+
+const config: CapacitorConfig = {
+  appId: APP_ID,
+  appName: APP_NAME,
+  webDir: 'dist',
+  backgroundColor: '#0b1220',
+  android: {
+    allowMixedContent: false,
+  },
+};
+
+export default config;
