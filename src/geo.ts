@@ -13,9 +13,9 @@ export function haversineMeters(a: LatLng, b: LatLng): number {
 }
 
 export function formatDistance(meters: number): string {
-  if (meters < 1000) return `${Math.round(meters)} m`;
-  const km = meters / 1000;
-  return `${km.toFixed(km < 10 ? 1 : 0)} km`;
+  if (meters < 300) return `${Math.round(meters * 3.281)} ft`;
+  const mi = meters / 1609.34;
+  return `${mi.toFixed(mi < 10 ? 1 : 0)} mi`;
 }
 
 export function formatDuration(totalSeconds: number): string {
@@ -29,7 +29,7 @@ export function formatDuration(totalSeconds: number): string {
 
 export function formatSpeed(mps: number | null): string {
   if (mps == null || Number.isNaN(mps)) return '—';
-  return `${Math.round(mps * 3.6)} km/h`;
+  return `${Math.round(mps * 2.23694)} mph`;
 }
 
 export function formatDateTime(epochMs: number): string {

@@ -69,11 +69,21 @@ export function createMapTab(root: HTMLElement, ctx: TabContext): () => void {
       img.src = r.photoDataUrl;
       sheet.appendChild(img);
     }
-    sheet.append(
-      el('p', '', `Reported ${formatDateTime(r.createdAt)}`),
-      el('p', '', r.notes || 'No notes.'),
-      el('p', 'muted', `${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}`),
-    );
+    const rows = el('div', 'detail-rows');
+    const addRow = (k: string, v: string) => {
+      const row = el('div', 'detail-row');
+      row.append(el('span', 'detail-k', k), el('span', 'detail-v', v));
+      rows.appendChild(row);
+    };
+    addRow('Severity', r.severity);
+    addRow('Reported', formatDateTime(r.createdAt));
+    addRow('Location', `${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}`);
+    addRow('Source', isSeed ? 'Denver 311 (public record)' : r.isSample ? 'Sample report' : 'Your report');
+    sheet.appendChild(rows);
+    if (r.notes) sheet.append(el('p', '', r.notes));
+    const shareBtn = el('button', 'btn btn-ghost btn-block', 'Share');
+    shareBtn.addEventListener('click', () => void shareReport(r));
+    sheet.appendChild(shareBtn);
     if (isSeed) {
       // 311 pins are public record, not the user's data: no delete button.
       sheet.append(el('p', 'muted small', 'Public record from Denver 311 — not your report.'));
@@ -89,6 +99,25 @@ export function createMapTab(root: HTMLElement, ctx: TabContext): () => void {
       }
     });
     sheet.appendChild(del);
+  }
+
+  async function shareReport(r: PotholeReport): Promise<void> {
+    const text = `${r.severity} pothole — ${r.lat.toFixed(5)}, ${r.lng.toFixed(5)}`;
+    const url = `https://maps.google.com/?q=${r.lat},${r.lng}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: 'RoadWatch pothole', text, url });
+        return;
+      } catch {
+        return; // user dismissed the share sheet
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      toast('Location copied.');
+    } catch {
+      toast('Sharing is not available here.');
+    }
   }
 
   return () => {

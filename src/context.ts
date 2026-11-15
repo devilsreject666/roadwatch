@@ -9,7 +9,7 @@ import { autoDetect } from './autoDetect';
 import { locationService } from './location';
 import type { Theme } from './mapView';
 
-export type TabName = 'navigate' | 'map' | 'trips' | 'profile';
+export type TabName = 'navigate' | 'map' | 'trips' | 'claims' | 'profile';
 
 export interface TabContext {
   repo: Repository;

@@ -6,6 +6,7 @@ import type { TabName } from './context';
 import { createNavigateTab } from './tabs/navigate';
 import { createMapTab } from './tabs/mapTab';
 import { createTripsTab } from './tabs/trips';
+import { createClaimsTab } from './tabs/claims';
 import { createProfileTab } from './tabs/profile';
 import { el } from './ui';
 import './styles.css';
@@ -18,8 +19,9 @@ app.appendChild(pages);
 
 const tabs: Array<{ name: TabName; label: string; icon: string }> = [
   { name: 'navigate', label: 'Navigate', icon: '🧭' },
-  { name: 'map', label: 'Map', icon: '🗺️' },
   { name: 'trips', label: 'Trips', icon: '🚗' },
+  { name: 'claims', label: 'Claims', icon: '📋' },
+  { name: 'map', label: 'Map', icon: '🗺️' },
   { name: 'profile', label: 'Profile', icon: '👤' },
 ];
 
@@ -33,6 +35,7 @@ const builders: Record<TabName, (root: HTMLElement) => () => void> = {
   navigate: (r) => createNavigateTab(r, ctx),
   map: (r) => createMapTab(r, ctx),
   trips: (r) => createTripsTab(r, ctx),
+  claims: (r) => createClaimsTab(r, ctx),
   profile: (r) => createProfileTab(r, ctx),
 };
 

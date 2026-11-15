@@ -28,7 +28,7 @@ export class MapView {
       style: this.styleUrl(),
       center: DEFAULT_CENTER,
       zoom: 14,
-      pitch: 0,
+      pitch: 45,
       attributionControl: { compact: true },
     });
     this.map.addControl(
@@ -183,7 +183,7 @@ export class MapView {
           'circle-color': SEVERITY_COLORS['Moderate'],
           'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 2.5, 14, 5, 17, 8],
           'circle-stroke-width': 1,
-          'circle-stroke-color': '#0b1220',
+          'circle-stroke-color': '#050a13',
           'circle-opacity': 0.9,
         },
       });
@@ -235,7 +235,7 @@ export class MapView {
         type: 'line',
         source: ROUTE_SRC,
         paint: {
-          'line-color': '#38bdf8',
+          'line-color': '#267cff',
           'line-width': 6,
           'line-opacity': 0.9,
         },
@@ -258,14 +258,14 @@ export class MapView {
     if (this.map.getLayer(ROUTE_LAYER)) this.map.removeLayer(ROUTE_LAYER);
     if (this.map.getSource(ROUTE_SRC)) this.map.removeSource(ROUTE_SRC);
     this.map.setTerrain(null);
-    this.map.setPitch(0);
+    this.map.setPitch(45);
   }
 
   fitToRoute(points: LatLng[]): void {
     if (!points.length) return;
     const bounds = new maplibregl.LngLatBounds();
     for (const p of points) bounds.extend([p.lng, p.lat]);
-    this.map.fitBounds(bounds, { padding: 60, pitch: 0 });
+    this.map.fitBounds(bounds, { padding: 60, pitch: 45 });
   }
 
   /** 3D follow camera for navigation mode. */
@@ -280,7 +280,7 @@ export class MapView {
   }
 
   flyTo(pos: LatLng, zoom = 15): void {
-    this.map.flyTo({ center: [pos.lng, pos.lat], zoom, duration: 1200 });
+    this.map.flyTo({ center: [pos.lng, pos.lat], zoom, pitch: 45, duration: 1200 });
   }
 
   destroy(): void {

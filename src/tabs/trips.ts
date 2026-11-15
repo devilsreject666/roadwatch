@@ -17,6 +17,7 @@ const POTHOLE_PROXIMITY_M = 60;
 
 export function createTripsTab(root: HTMLElement, ctx: TabContext): () => void {
   root.className = 'tab-page tab-trips';
+  let filter: 'all' | 'week' | 'month' = 'all';
   let recording: {
     id: string;
     startedAt: number;
@@ -31,6 +32,22 @@ export function createTripsTab(root: HTMLElement, ctx: TabContext): () => void {
     root.innerHTML = '';
     const head = el('div', 'page-head', 'Trips');
     root.appendChild(head);
+
+    const filterRow = el('div', 'filter-row');
+    const filters: Array<{ key: typeof filter; label: string }> = [
+      { key: 'all', label: 'All' },
+      { key: 'week', label: 'This Week' },
+      { key: 'month', label: 'This Month' },
+    ];
+    for (const f of filters) {
+      const chip = el('button', `filter-chip${filter === f.key ? ' active' : ''}`, f.label);
+      chip.addEventListener('click', () => {
+        filter = f.key;
+        render();
+      });
+      filterRow.appendChild(chip);
+    }
+    root.appendChild(filterRow);
 
     if (recording) {
       const card = el('div', 'card glass recording-card');
@@ -67,29 +84,106 @@ export function createTripsTab(root: HTMLElement, ctx: TabContext): () => void {
     }
 
     const list = el('div', 'trip-list');
-    const trips = ctx.repo.listTrips();
+    const allTrips = ctx.repo.listTrips();
+    const now = Date.now();
+    const trips = allTrips.filter((t) => {
+      if (filter === 'week') return t.startedAt >= now - 7 * 24 * 3600 * 1000;
+      if (filter === 'month') return t.startedAt >= now - 30 * 24 * 3600 * 1000;
+      return true;
+    });
     if (!trips.length && !recording) {
-      list.appendChild(el('p', 'muted center', 'No trips yet. Start one before you drive.'));
+      list.appendChild(
+        el(
+          'p',
+          'muted center',
+          allTrips.length ? 'No trips in this range.' : 'No trips yet. Start one before you drive.',
+        ),
+      );
     }
     for (const t of trips) {
       const item = el('button', 'trip-item glass');
       const title = t.endedAt
         ? formatDateTime(t.startedAt)
         : `In progress · started ${formatDateTime(t.startedAt)}`;
-      item.append(
-        el('div', 'trip-title', title),
-        el(
-          'div',
-          'trip-sub muted',
-          `${formatDistance(t.distanceMeters)} · ${formatDuration(
-            ((t.endedAt ?? Date.now()) - t.startedAt) / 1000,
-          )} · ${t.potholesPassed.length} pothole${t.potholesPassed.length === 1 ? '' : 's'} passed`,
-        ),
+      const dayLabel = dayName(t.startedAt);
+      const grid = el('div', 'trip-card-grid');
+      grid.appendChild(trailPreview(t));
+      const stats = el('div', '');
+      const dur = formatDuration(((t.endedAt ?? Date.now()) - t.startedAt) / 1000);
+      stats.append(
+        el('div', 'trip-title', formatDistance(t.distanceMeters)),
+        el('div', 'trip-sub muted', `Distance`),
+        el('div', 'trip-title', dur),
+        el('div', 'trip-sub muted', `Duration`),
+        el('div', 'trip-title', `${t.potholesPassed.length}`),
+        el('div', 'trip-sub muted', `Pothole${t.potholesPassed.length === 1 ? '' : 's'} passed`),
       );
+      grid.appendChild(stats);
+      item.append(el('div', 'trip-title', `${dayLabel} · ${title}`), grid);
       item.addEventListener('click', () => showTripDetail(t));
       list.appendChild(item);
     }
     root.appendChild(list);
+  }
+
+  function dayName(epochMs: number): string {
+    const d = new Date(epochMs);
+    const today = new Date();
+    const sameDay = (a: Date, b: Date) =>
+      a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+    if (sameDay(d, today)) return 'Today';
+    const y = new Date(today);
+    y.setDate(y.getDate() - 1);
+    if (sameDay(d, y)) return 'Yesterday';
+    return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  /** Tiny SVG trail from the trip's real GPS points — no map instance per card. */
+  function trailPreview(t: Trip): HTMLElement {
+    const wrap = el('div', 'trip-mini-map');
+    if (t.points.length < 2) {
+      wrap.appendChild(el('div', 'muted small center', 'No GPS trail'));
+      return wrap;
+    }
+    const lats = t.points.map((p) => p.lat);
+    const lngs = t.points.map((p) => p.lng);
+    const minLat = Math.min(...lats);
+    const maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs);
+    const maxLng = Math.max(...lngs);
+    const spanLat = Math.max(maxLat - minLat, 0.0001);
+    const spanLng = Math.max(maxLng - minLng, 0.0001);
+    const W = 140;
+    const H = 96;
+    const px = (p: TripPoint) => (8 + ((p.lng - minLng) / spanLng) * (W - 16)).toFixed(1);
+    const py = (p: TripPoint) => (8 + (1 - (p.lat - minLat) / spanLat) * (H - 16)).toFixed(1);
+    const pts = t.points.map((p) => `${px(p)},${py(p)}`).join(' ');
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '96');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'polyline');
+    line.setAttribute('points', pts);
+    line.setAttribute('fill', 'none');
+    line.setAttribute('stroke', '#267cff');
+    line.setAttribute('stroke-width', '3');
+    line.setAttribute('stroke-linejoin', 'round');
+    line.setAttribute('stroke-linecap', 'round');
+    svg.appendChild(line);
+    const dot = (p: TripPoint, color: string) => {
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', px(p));
+      c.setAttribute('cy', py(p));
+      c.setAttribute('r', '4.5');
+      c.setAttribute('fill', color);
+      c.setAttribute('stroke', '#fff');
+      c.setAttribute('stroke-width', '1.5');
+      svg.appendChild(c);
+    };
+    dot(t.points[0], '#32d583');
+    dot(t.points[t.points.length - 1], '#f04452');
+    wrap.appendChild(svg);
+    return wrap;
   }
 
   function statBox(val: HTMLElement, label: string): HTMLElement {
@@ -174,18 +268,47 @@ export function createTripsTab(root: HTMLElement, ctx: TabContext): () => void {
 
   function showTripDetail(t: Trip): void {
     const { sheet, close } = openSheet(formatDateTime(t.startedAt));
-    const summary = el('div', 'trip-summary');
-    summary.append(
-      el('div', '', `Distance: ${formatDistance(t.distanceMeters)}`),
-      el(
-        'div',
-        '',
-        `Duration: ${formatDuration(((t.endedAt ?? Date.now()) - t.startedAt) / 1000)}`,
-      ),
-      el('div', '', `Points: ${t.points.length}`),
-      el('div', '', `Potholes passed: ${t.potholesPassed.length}`),
+    const dur = formatDuration(((t.endedAt ?? Date.now()) - t.startedAt) / 1000);
+    const metrics = el('div', 'metric-grid');
+    const metric = (value: string, label: string) => {
+      const m = el('div', 'metric');
+      m.append(el('span', 'metric-value', value), el('span', 'metric-label', label));
+      return m;
+    };
+    metrics.append(
+      metric(formatDistance(t.distanceMeters), 'Distance'),
+      metric(dur, 'Duration'),
+      metric(`${t.potholesPassed.length}`, 'Potholes'),
     );
-    sheet.appendChild(summary);
+    sheet.appendChild(metrics);
+    sheet.appendChild(
+      el('div', 'trip-summary muted', `${t.points.length} GPS points · started ${formatDateTime(t.startedAt)}`),
+    );
+
+    if (t.potholesPassed.length) {
+      sheet.appendChild(el('h3', '', 'Potholes passed'));
+      const byId = new Map(ctx.repo.listPotholes().map((r) => [r.id, r]));
+      for (const id of t.potholesPassed) {
+        const r = byId.get(id);
+        if (!r) continue;
+        const row = el('div', 'detail-row');
+        const pillClass =
+          r.severity === 'Severe' || r.severity === 'Dangerous' || r.severity === 'Extreme'
+            ? 'status-pill danger'
+            : r.severity === 'Moderate'
+              ? 'status-pill warning'
+              : 'status-pill success';
+        row.append(
+          el('span', pillClass, r.severity),
+          el(
+            'span',
+            'detail-v',
+            `${r.lat.toFixed(4)}, ${r.lng.toFixed(4)}${r.source === 'denver311' ? ' · Denver 311' : ''}`,
+          ),
+        );
+        sheet.appendChild(row);
+      }
+    }
 
     if (t.points.length > 1) {
       const mapWrap = el('div', 'mini-map');
